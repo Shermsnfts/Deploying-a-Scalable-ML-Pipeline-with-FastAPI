@@ -1,74 +1,71 @@
 import os
-
 import pandas as pd
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
-
-from ml.data import apply_label, process_data
 from ml.model import inference, load_model
+from ml.data import process_data
 
-# DO NOT MODIFY
-class Data(BaseModel):
-    age: int = Field(..., example=37)
-    workclass: str = Field(..., example="Private")
-    fnlgt: int = Field(..., example=178356)
-    education: str = Field(..., example="HS-grad")
-    education_num: int = Field(..., example=10, alias="education-num")
-    marital_status: str = Field(
-        ..., example="Married-civ-spouse", alias="marital-status"
-    )
-    occupation: str = Field(..., example="Prof-specialty")
-    relationship: str = Field(..., example="Husband")
-    race: str = Field(..., example="White")
-    sex: str = Field(..., example="Male")
-    capital_gain: int = Field(..., example=0, alias="capital-gain")
-    capital_loss: int = Field(..., example=0, alias="capital-loss")
-    hours_per_week: int = Field(..., example=40, alias="hours-per-week")
-    native_country: str = Field(..., example="United-States", alias="native-country")
+# Define the input schema with Field aliases to match the hyphenated census column names
+class CensusData(BaseModel):
+    age: int
+    workclass: str
+    fnlgt: int
+    education: str
+    education_num: int = Field(alias="education-num")
+    marital_status: str = Field(alias="marital-status")
+    occupation: str
+    relationship: str
+    race: str
+    sex: str
+    capital_gain: int = Field(alias="capital-gain")
+    capital_loss: int = Field(alias="capital-loss")
+    hours_per_week: int = Field(alias="hours-per-week")
+    native_country: str = Field(alias="native-country")
 
-path = None # TODO: enter the path for the saved encoder 
-encoder = load_model(path)
+    class Config:
+        populate_by_name = True
 
-path = None # TODO: enter the path for the saved model 
-model = load_model(path)
+app = FastAPI()
 
-# TODO: create a RESTful API using FastAPI
-app = None # your code here
+# Load model, encoder, and label binarizer at startup
+# Ensure these files exist in your 'model/' directory after running train_model.py
+model = load_model("model/model.pkl")
+encoder = load_model("model/encoder.pkl")
+lb = load_model("model/lb.pkl")
 
-# TODO: create a GET on the root giving a welcome message
 @app.get("/")
-async def get_root():
-    """ Say hello!"""
-    # your code here
-    pass
+async def root():
+    """Welcome message endpoint."""
+    return {"message": "Welcome to the Census Income Prediction API!"}
 
-
-# TODO: create a POST on a different path that does model inference
-@app.post("/data/")
-async def post_inference(data: Data):
-    # DO NOT MODIFY: turn the Pydantic model into a dict.
-    data_dict = data.dict()
-    # DO NOT MODIFY: clean up the dict to turn it into a Pandas DataFrame.
-    # The data has names with hyphens and Python does not allow those as variable names.
-    # Here it uses the functionality of FastAPI/Pydantic/etc to deal with this.
-    data = {k.replace("_", "-"): [v] for k, v in data_dict.items()}
-    data = pd.DataFrame.from_dict(data)
-
+@app.post("/predict")
+async def predict(data: CensusData):
+    """
+    Takes census data as JSON, processes it using the encoder/lb, 
+    and returns the model's income prediction.
+    """
+    # Convert Pydantic object to DataFrame
+    df = pd.DataFrame([data.model_dump(by_alias=True)])
+    
+    # List of categorical features used during training
     cat_features = [
-        "workclass",
-        "education",
-        "marital-status",
-        "occupation",
-        "relationship",
-        "race",
-        "sex",
-        "native-country",
+        "workclass", "education", "marital-status", "occupation", 
+        "relationship", "race", "sex", "native-country"
     ]
-    data_processed, _, _, _ = process_data(
-        # your code here
-        # use data as data input
-        # use training = False
-        # do not need to pass lb as input
+    
+    # Process the data (training=False because we are using the existing encoder/lb)
+    X, _, _, _ = process_data(
+        df, 
+        categorical_features=cat_features, 
+        training=False, 
+        encoder=encoder, 
+        lb=lb
     )
-    _inference = None # your code here to predict the result using data_processed
-    return {"result": apply_label(_inference)}
+    
+    # Run inference
+    pred = inference(model, X)
+    
+    # Inverse transform the prediction back to label ('<=50K' or '>50K')
+    result = lb.inverse_transform(pred)[0]
+    
+    return {"result": result}

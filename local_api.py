@@ -1,17 +1,18 @@
+import requests
 import json
 
-import requests
+# URL of the running API
+url = "http://127.0.0.1:8001"
 
-# TODO: send a GET using the URL http://127.0.0.1:8000
-r = None # Your code here
+# 1. Send a GET using the URL
+r = requests.get(url)
 
-# TODO: print the status code
-# print()
-# TODO: print the welcome message
-# print()
+# Print the status code
+print(f"Status Code: {r.status_code}")
+# Print the welcome message
+print(f"Result: {r.json()['message']}")
 
-
-
+# Data payload for POST
 data = {
     "age": 37,
     "workclass": "Private",
@@ -29,10 +30,11 @@ data = {
     "native-country": "United-States",
 }
 
-# TODO: send a POST using the data above
-r = None # Your code here
+# 2. Send a POST using the data above
+# We pass the dictionary to the 'json' parameter of requests.post
+r_post = requests.post(f"{url}/predict", json=data)
 
-# TODO: print the status code
-# print()
-# TODO: print the result
-# print()
+# Print the status code
+print(f"Status Code: {r_post.status_code}")
+# Print the result
+print(f"Result: {r_post.json()['result']}")
