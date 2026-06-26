@@ -1,3 +1,6 @@
+* Here is my repository link
+* https://github.com/Shermsnfts/Deploying-a-Scalable-ML-Pipeline-with-FastAPI.git
+
 Working in a command line environment is recommended for ease of use with git and dvc. If on Windows, WSL1 or 2 is recommended.
 
 # Environment Set up (pip or conda)
@@ -5,6 +8,8 @@ Working in a command line environment is recommended for ease of use with git an
 * Option 2: use the supplied file `requirements.txt` to create a new environment with pip
     
 ## Repositories
+* HERE IS MY REPOSITORY LINK
+* https://github.com/Shermsnfts/Deploying-a-Scalable-ML-Pipeline-with-FastAPI.git
 * Create a directory for the project and initialize git.
     * As you work on the code, continually commit changes. Trained models you want to use in production must be committed to GitHub.
 * Connect your local git repo to GitHub.
@@ -27,3 +32,7 @@ Working in a command line environment is recommended for ease of use with git an
 *  Create a RESTful API using FastAPI this must implement:
     * GET on the root giving a welcome message.
     * POST that does model inference.
+
+
+* Again, here is my repository link
+* https://github.com/Shermsnfts/Deploying-a-Scalable-ML-Pipeline-with-FastAPI.git
